@@ -58,10 +58,23 @@ if props.mode.lower() == "train":
                     tms = tms.to(device=device, dtype=props.dtype)
                     tms_pred = tms_pred.to(device=device, dtype=props.dtype)
                     opt = opt.to(device=device, dtype=props.dtype)
+
+                    if props.pred:
+                        tms_pred = tms_pred.to(device=device, dtype=props.dtype)
+                        
+                        predicted = model(props, node_features, val_ds.edge_index, capacities,
+                                val_ds.padded_edge_ids_per_path,
+                                tms, tms_pred, train_dataset.pte)
+
+                    # If prediction is off, feed the actual matrix as predicted matrix
+                    else:
+                        predicted = model(props, node_features, val_ds.edge_index, capacities,
+                                val_ds.padded_edge_ids_per_path,
+                                tms, tms, train_dataset.pte)
                     
-                    predicted = model(props, node_features, val_ds.edge_index, capacities,
-                            val_ds.padded_edge_ids_per_path,
-                            tms, tms_pred, val_ds.pte)
+                    # predicted = model(props, node_features, val_ds.edge_index, capacities,
+                    #         val_ds.padded_edge_ids_per_path,
+                    #         tms, tms_pred, val_ds.pte)
                     val_loss, value_loss_value = loss_mlu(predicted, opt)
                     val_norm_mlu.append(value_loss_value)
                     
