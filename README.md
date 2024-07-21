@@ -26,7 +26,7 @@ Please contact `aalqiam@purdue.edu` for any questions.
 - In the `manifest` folder, The user should provide a `txt` file that holds the topology name and describes at every time step the **topology_file.json**,**set_of_pairs_file.pkl**,**traffic_matrix.pkl** file that will be read at that time step. For every timestep, a corresponding file of these three should exist in the `topologies`, `pairs`, and `traffic_matrices` folders inside a directory with the topology name. 
 - For details on the data format, please check [Data Format](#data-format)
 - To compute optimal values and cluterize your dataset, run:
-   - ``python3 frameworks/solve_mlu.py --num_paths_per_pair 15 --opt_start_idx 0 --opt_end_idx 2000 --topo topo_name --framework gurobi``
+   - ``python3 frameworks/gurobi_mlu.py --num_paths_per_pair 15 --opt_start_idx 0 --opt_end_idx 2000 --topo topo_name --framework gurobi``
    - Please refer to our paper to check the definition of a "cluster" in this context.
 
  - To train, run (for example):
