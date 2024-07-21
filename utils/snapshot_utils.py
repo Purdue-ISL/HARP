@@ -15,9 +15,9 @@ class Read_Snapshot:
         
         # read graph from json
         self.graph, self.capacities = self.read_graph_from_json(self.topo, topology_filename)
-        self.capacities = self.capacities/10
+        self.capacities = self.capacities
         self.pairs = self.read_pairs_from_pkl(pairs_filename)
-        self.tm = self.read_tms(tm_filename)/10
+        self.tm = self.read_tms(tm_filename)
         
         if self.props.pred:
             self.tm_pred = self.read_tms_pred(tm_filename)
