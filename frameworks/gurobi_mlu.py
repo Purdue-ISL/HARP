@@ -133,7 +133,6 @@ for i, snapshot in tqdm.tqdm(enumerate(manifest[start_index:end_index]), total=l
     max_link_util = mlu.addVar(lb=0.0, ub=GRB.INFINITY, vtype=GRB.CONTINUOUS, name="max_link_util")
     # # Done with Gurobi variables
     
-    commodity_per_path = np.repeat(np_tm, repeats=num_paths_per_pair, axis=0)
     vars_mlu_tm = vars_mlu.reshape(-1, 1)*commodity_per_path
     commodities_on_links = cluster_info.paths_to_edges.T @ vars_mlu_tm
     
