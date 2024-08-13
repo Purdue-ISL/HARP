@@ -2,7 +2,8 @@
 HARP is a transferable neural network for WAN Traffic Engineering that is designed to handle changing topologies. It was published at ACM SIGCOMM 2024.
 
 If you use this code, please cite:
-```@inproceedings{HARP,
+```
+@inproceedings{HARP,
 author = {AlQiam, Abd AlRhman and Yao, Yuanjun and Wang, Zhaodong and Ahuja, Satyajeet Singh and Zhang, Ying and Rao, Sanjay G. and Ribeiro, Bruno and Tawarmalani, Mohit},
 title = {Transferable Neural WAN TE for Changing Topologies},
 year = {2024},
@@ -17,7 +18,8 @@ numpages = {17},
 keywords = {traffic engineering, wide-area networks, network optimization, machine learning},
 location = {Sydney, NSW, Australia},
 series = {ACM SIGCOMM '24}
-}```
+}
+```
 Please contact `aalqiam@purdue.edu` for any questions.
 
 ### Required Libraries
