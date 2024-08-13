@@ -26,7 +26,7 @@ Please contact `aalqiam@purdue.edu` for any questions.
 1. Install the required Python packages as listed in the requirements.txt. Use:
    `pip3 install -r requirements.txt`
 2. Please follow this [link](https://pytorch.org/get-started/locally/) to install a version of PyTorch that fits your environment (CPU/GPU).
-3. Identify a suitable [URL](https://data.pyg.org/whl/) depending on PyTorch and CUDA/CPU versions installed in the previous step. Then, run:
+3. Identify and copy the link of a suitable [URL](https://data.pyg.org/whl/) depending on PyTorch and CUDA/CPU versions installed in the previous step. Then, run:
    - `pip install --no-index torch-scatter -f [URL]`
 4. Follow [Gurobi Website](https://www.gurobi.com/) to install and setup Gurobi Optimizer.
       
