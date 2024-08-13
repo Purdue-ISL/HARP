@@ -3,22 +3,29 @@ HARP is a transferable neural network for WAN Traffic Engineering that is design
 
 If you use this code, please cite:
 ```
-@inproceedings{harp,
-    title={Transferable Neural WAN TE for Changing Topologies},
-    author={AlQiam, Abd AlRhman and Yao, Yuanjun and Wang, Zhaodong and Ahuja, Satyajeet Singh and Zhang, Ying and Rao, Sanjay G. and Ribeiro, Bruno and Tawarmalani, Mohit},
-    booktitle={Proceedings of the ACM SIGCOMM 2024 Conference},
-    pages={y--y},
-    month=aug,
-    year={2024}
-}
-```
+@inproceedings{HARP,
+author = {AlQiam, Abd AlRhman and Yao, Yuanjun and Wang, Zhaodong and Ahuja, Satyajeet Singh and Zhang, Ying and Rao, Sanjay G. and Ribeiro, Bruno and Tawarmalani, Mohit},
+title = {Transferable Neural WAN TE for Changing Topologies},
+year = {2024},
+isbn = {9798400706141},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3651890.3672237},
+doi = {10.1145/3651890.3672237},
+booktitle = {Proceedings of the ACM SIGCOMM 2024 Conference},
+pages = {86–102},
+numpages = {17},
+keywords = {traffic engineering, wide-area networks, network optimization, machine learning},
+location = {Sydney, NSW, Australia},
+series = {ACM SIGCOMM '24}
+}```
 Please contact `aalqiam@purdue.edu` for any questions.
 
 ### Required Libraries
 1. Install the required Python packages as listed in the requirements.txt. Use:
    `pip3 install -r requirements.txt`
 2. Please follow this [link](https://pytorch.org/get-started/locally/) to install a version of PyTorch that fits your environment (CPU/GPU).
-3. Identify a suitable URL depending on PyTorch and CUDA/CPU versions installed in the previous step. Then, run:
+3. Identify a suitable [URL](https://data.pyg.org/whl/) depending on PyTorch and CUDA/CPU versions installed in the previous step. Then, run:
    - `pip install --no-index torch-scatter -f [URL]`
 4. Follow [Gurobi Website](https://www.gurobi.com/) to install and setup Gurobi Optimizer.
       
