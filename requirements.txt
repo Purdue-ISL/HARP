@@ -1,6 +1,6 @@
-numpy
-scipy
-tqdm
-networkx
-itertools
-torch_geometric
+networkx==3.0
+numpy==1.22.4
+scipy==3.0
+torch_geometric==2.4.0
+tqdm==4.66.1
+
