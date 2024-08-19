@@ -52,7 +52,7 @@ Please contact `aalqiam@purdue.edu` for any questions.
 - For further explanation on command line arguments, see [Command Line Arguments Explanation](#command-line-arguments-explanation)
 
 ### Working with Public Datasets (Abilene and GEANT):
-- Download `AbileneTM-all.tar` from this [link](https://www.cs.utexas.edu/~yzhang/research/AbileneTM/) and decompress it inside ``prepare_abilene`` folder.
+- Download `AbileneTM-all.tar` from this [link](https://www.cs.utexas.edu/~yzhang/research/AbileneTM/) and decompress it (twice) inside ``prepare_abilene`` folder.
 - Then, run ``python3 run prepare_abilene_harp.py``
 - This example should serve as a reference on how to prepare any dataset.
 - A preprocessed copy of the GEANT dataset in the format needed by HARP is available on this [link](https://app.box.com/s/v0qjip0ohdezzm0k08unlxk6aqp9tv1f)
