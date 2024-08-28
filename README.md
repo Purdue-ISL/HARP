@@ -82,7 +82,7 @@ HARP was tested using the following setup:
 ### Data Format:
 - **Traffic matrices**: Numpy array of shape (num_pairs, 1)
 - **Pairs**: Numpy array of shape (num_pairs, 2)
-- Note: the kth demand in the traffic matrix must correspond to the kth pair in the set of pairs file. This relation must be preserved for all snapshots. We suggest sorting the hash map (pairs/keys and values/demands) before separating.
+- Note: the kth demand in the traffic matrix must correspond to the kth pair in the set of pairs file. This relation must be preserved for all snapshots. **We suggest sorting the hash map (pairs/keys and values/demands) before separating**.
 - **Paths**: By default, HARP computes K shortest paths and automatically puts them in the correct folders and format.
    - If you wish to use your paths:
      - create a Python dictionary where the keys are the pairs and the values are a list of $K$ lists, where the inner lists are a sequence of edges.
