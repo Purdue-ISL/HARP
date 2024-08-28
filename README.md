@@ -99,4 +99,4 @@ HARP was tested using the following setup:
    - In our paper, the AnonNet network is dynamic.
    - GEANT, Abilene, and KDL networks are static.
    - **This CLA is useful to save GPU memory when training for a (static) topology that does not change across snapshots**.
-- dtype: Determines the `dtype` of HARP and its data [float32, bfloat16] corresponding to [torch.float32, torch.bfloat16]. The default is float32.
+- dtype: Determines the `dtype` of HARP and its data [float32, float16] corresponding to [torch.float32, torch.bfloat16]. The default is float32.
