@@ -53,6 +53,7 @@ Please contact `aalqiam@purdue.edu` for any questions.
 
 ### Working with Public Datasets (Abilene and GEANT):
 - Download `AbileneTM-all.tar` from this [link](https://www.cs.utexas.edu/~yzhang/research/AbileneTM/) and decompress it (twice) inside ``prepare_abilene`` folder.
+   - `cd prepare_abilene`
    - `wget https://www.cs.utexas.edu/~yzhang/research/AbileneTM/AbileneTM-all.tar`
    - `tar -xvf AbileneTM-all.tar`
    - `gunzip *.gz`
