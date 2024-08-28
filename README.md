@@ -21,15 +21,19 @@ series = {ACM SIGCOMM '24}
 }
 ```
 Please contact `aalqiam@purdue.edu` for any questions.
-
+### Environment Used
+HARP was tested using the following setup:
+- Ubuntu 22.04 machine
+- Python 3.10.6
+- `torch==2.1.0+cu121`
+- `torch-scatter==2.1.2`
+- Check the rest in requirements.txt
 ### Required Libraries
 1. Install the required Python packages as listed in the requirements.txt. Use:
    `pip3 install -r requirements.txt`
 2. Please follow this [link](https://pytorch.org/get-started/locally/) to install a version of PyTorch that fits your environment (CPU/GPU).
-   - `torch==2.1.0+cu121` was used.
 3. Identify and copy the link of a suitable [URL](https://data.pyg.org/whl/) depending on PyTorch and CUDA/CPU versions installed in the previous step. Then, run:
    - `pip install --no-index torch-scatter -f [URL]`
-   - `torch-scatter==2.1.2` was used.
 4. Follow [Gurobi Website](https://www.gurobi.com/) to install and setup Gurobi Optimizer.
       
 ### How to Use HARP
