@@ -2,7 +2,7 @@ def add_default_args(parser):
     
     # Topology arguments
     parser.add_argument("--topo", type=str, help="Name of the topology to be used.")
-    parser.add_argument("--weight", type=str, default=None, help="Name of the file containing the weights of the edges.")
+    parser.add_argument("--weight", type=str, default=None, help="name of metric used to represent weights of the edges.")
     parser.add_argument("--metric", type=str, default="MLU", help="Only supports MLU (Maximum Link Utilization) for now.")
     
     ############ HARP arguments #############
