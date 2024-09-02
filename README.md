@@ -61,8 +61,8 @@ HARP was tested using the following setup:
    - `wget https://www.cs.utexas.edu/~yzhang/research/AbileneTM/AbileneTM-all.tar`
    - `tar -xvf AbileneTM-all.tar`
    - `gunzip *.gz`
-- Then, run ``python3 prepare_abilene_harp.py``
-- This example should serve as a reference on how to prepare any dataset.
+   - Then, run ``python3 prepare_abilene_harp.py``
+   - This example should serve as a reference on how to prepare any dataset.
 - A preprocessed copy of the GEANT dataset in the format needed by HARP is available on this [link](https://app.box.com/s/v0qjip0ohdezzm0k08unlxk6aqp9tv1f)
 - A preprocessed copy of the KDL dataset in the format needed by HARP is available on this [link](https://drive.google.com/file/d/1dZLhpgJ1ZcjzsZsPZwbTr0t2_Fkz_8oP/view)
 
