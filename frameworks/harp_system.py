@@ -8,6 +8,7 @@ import torch_scatter
 import os
 # os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:1024'
 
+# Set Transformer
 class TransformerModel(nn.Module):
     def __init__(self, in_dim: int, nhead: int, dim_feedforward: int,
                  nlayers: int, dropout: float = 0.0, activation="gelu"):
@@ -20,6 +21,20 @@ class TransformerModel(nn.Module):
         self.in_dim = in_dim
         
     def forward(self, src: Tensor, src_key_padding_mask: Tensor = None) -> Tensor:
+        """
+        Forward pass of the Transformer model.
+
+        Args:
+            src (torch.Tensor): Input tensor of shape (batch_size, seq_len, in_dim), 
+                                representing the source sequences.
+            src_key_padding_mask (torch.Tensor, optional): Mask tensor of shape (batch_size, seq_len) 
+                                                        indicating which positions should be ignored 
+                                                        in the source sequence. Default is None.
+
+        Returns:
+            torch.Tensor: Output tensor of the same shape as the input, after being passed through 
+                        the Transformer encoder.
+        """
         
         if src_key_padding_mask is not None:
             src_key_padding_mask = (~src_key_padding_mask)
@@ -28,6 +43,7 @@ class TransformerModel(nn.Module):
         output = self.transformer_encoder(src, src_key_padding_mask=src_key_padding_mask)
         return output
 
+# GNN of HARP
 class GNN(nn.Module):
     def __init__(self, num_features, num_gnn_layers):
         super(GNN, self).__init__()
@@ -46,7 +62,34 @@ class GNN(nn.Module):
         
         
     def forward(self, node_features, edge_index, capacities):
-        
+        """
+        Forward pass of the GNN model.
+
+        Args:
+            node_features (torch.Tensor): Node features for each graph in the batch, 
+                                        shape (batch_size, num_nodes, num_features).
+            edge_index (torch.Tensor): Edge indices defining the graph connectivity, 
+                                    shape (2, num_edges).
+            capacities (torch.Tensor): Edge capacities for each graph in the batch, 
+                                    shape (batch_size, num_edges).
+
+        Returns:
+            torch.Tensor: Edge embeddings for each edge in the graph, with capacities included, 
+                        shape (batch_size, num_edges, output_dim).
+
+        Process:
+            1. Iterate over the batch of node features and capacities.
+            2. For each graph in the batch:
+                a. Pass the node features through each GNN layer (GCNConv), applying Leaky ReLU activation.
+                b. Collect the intermediate node embeddings after each GNN layer.
+                c. Concatenate node embeddings from all GNN layers if more than one GNN layer is used.
+            3. Stack the node embeddings for all graphs in the batch.
+            4. Expand edge_index to match the batch size, so it can be used for batch processing.
+            5. Use the expanded edge_index to extract edge embeddings from the node embeddings.
+            6. Sum the node embeddings corresponding to each edge and concatenate them with the edge capacities.
+        """
+
+
         batch_size = node_features.shape[0]
         ne_list = []
         for i in range(batch_size):
@@ -86,6 +129,7 @@ class HARP(nn.Module):
         
         super(HARP, self).__init__()
         
+        # Define the architecture of HARP
         self.num_gnn_layers = props.num_gnn_layers
         self.num_transformer_layers = props.num_transformer_layers
         self.dropout = props.dropout
@@ -93,21 +137,26 @@ class HARP(nn.Module):
         self.num_mlp2_hidden_layers = props.num_mlp2_hidden_layers
         self.device = props.device
         
-        
+        # Define the GNN
         self.gnn = GNN(2, self.num_gnn_layers)
 
         self.input_dim = self.gnn.output_dim + 1
         
+        # CLS Token for the Set Transformer
         self.cls_token = nn.Parameter(torch.Tensor(1, self.input_dim))
         nn.init.kaiming_normal_(self.cls_token, nonlinearity='relu')
+        
         if props.num_heads == 0:
             num_heads = self.input_dim//4
         else:
             num_heads = props.num_heads
+        
+        # Define the Set Transformer
         self.transformer = TransformerModel(in_dim = self.input_dim, nhead=num_heads,
                             dim_feedforward=self.input_dim, nlayers=self.num_transformer_layers, 
                             dropout=self.dropout, activation="gelu")
         
+        # Define the 1st MLP
         self.mlp_1_dim = self.input_dim + 1
         self.mlp1 = nn.ModuleList()
         self.mlp1.append(nn.Linear(self.mlp_1_dim, self.mlp_1_dim))
@@ -115,6 +164,7 @@ class HARP(nn.Module):
             self.mlp1.append(nn.Linear(self.mlp_1_dim, self.mlp_1_dim))
         self.mlp1.append(nn.Linear(self.mlp_1_dim, 1))
         
+        # Define the 2nd MLP (Recurrent Adjustment Unit - RAU)
         self.mlp_2_dim = self.input_dim + 3
         self.mlp2 = nn.ModuleList()
         self.mlp2.append(nn.Linear(self.mlp_2_dim, self.mlp_2_dim))
@@ -125,7 +175,24 @@ class HARP(nn.Module):
         
     def forward(self, props, node_features, edge_index, capacities, padded_edge_ids_per_path,
                 tm, tm_pred, paths_to_edges):
-        
+        """
+            Process:
+            1. Pass the node features, edge index, and capacities through the GNN to obtain edge embeddings.
+            2. Expand the edge embeddings using the padded edge IDs per path.
+            3. Add a CLS token to the edge embeddings and apply masking for attention.
+            4. At this point, tunnels are described as a set of edges (edge embeddings)
+            5. Pass the tunnels as sets of edges through the Set Transformer.
+            6. Concatenate the transformer output for path embeddings (corresponds to the CLS token) with the predicted traffic matrix.
+            7. Compute initial split ratios using the first MLP (mlp1).
+            8. Perform iterative adjustments of split ratios using the second MLP (RAU) within the 
+            specified number of for-loops. MLP2 takes as input (per tunnel):
+                i) Demand of the pair that the tunnels is associated with
+                ii) Network-wide MLU
+                iii) Bottleneck link utilization in the tunnel
+                iv) Tunnel embeddings conditioned on the bottleneck link as generated by the Set Transformer 
+        """
+
+
         num_for_loops = props.num_for_loops
         num_paths_per_pair = props.num_paths_per_pair
         edge_embeddings_with_caps = self.gnn(node_features, edge_index, capacities)

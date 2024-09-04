@@ -25,9 +25,13 @@ else:
     print("Only float32 and float16 are allowed")
     exit(1)
 
+
+# Retrieve batch size and number of epochs
 batch_size = props.batch_size
 n_epochs = props.epochs
 
+
+# Define the loss
 def loss_mlu(y_pred_batch, y_true_batch):
     losses = []
     loss_vals = []
@@ -46,11 +50,9 @@ def loss_mlu(y_pred_batch, y_true_batch):
     
 if props.mode.lower() == "train":
     
+
+    # Function for validation set
     def validate(model, props, val_ds, val_dl):
-        
-        # val_ds.pte = (val_ds.pte).to(device=props.device, dtype=props.dtype)
-        # val_ds.padded_edge_ids_per_path = val_ds.padded_edge_ids_per_path.to(device=props.device)
-        
         val_norm_mlu = []
         with torch.no_grad():
             with tqdm(val_dl) as vals:
@@ -77,18 +79,12 @@ if props.mode.lower() == "train":
                                 val_ds.padded_edge_ids_per_path,
                                 tms, tms, val_ds.pte)
                         
-                    # predicted = model(props, node_features, val_ds.edge_index, capacities,
-                    #         val_ds.padded_edge_ids_per_path,
-                    #         tms, tms_pred, val_ds.pte)
                     val_loss, value_loss_value = loss_mlu(predicted, opt)
                     val_norm_mlu.append(value_loss_value)
-                
-        # val_ds.pte = val_ds.pte.to(device="cpu")
-        # val_ds.padded_edge_ids_per_path = val_ds.padded_edge_ids_per_path.to(device="cpu")
         
         return val_norm_mlu
         
-    # create the dataset
+    # create the training and validation DataLoaders
     ds_list = []
     dl_list = []
     for clstr, start, end in zip(props.train_clusters, props.train_start_indices, props.train_end_indices):
@@ -105,7 +101,7 @@ if props.mode.lower() == "train":
         val_ds_list.append(val_dataset)
         val_dl_list.append(val_dl)
     
-    
+    # Instaniate HARP
     model = HARP(props)
     
     # model.float()
@@ -117,8 +113,10 @@ if props.mode.lower() == "train":
     train_losses = []
     val_losses = []
     
+    # Train harp for #n_epochs
     for epoch in range(n_epochs):
-                                
+
+        # Iterate over training clusters
         for i in range(len(ds_list)):
             train_dataset = ds_list[i]
             train_dl = dl_list[i]
@@ -132,6 +130,7 @@ if props.mode.lower() == "train":
                 for i, inputs in enumerate(tepoch):
                     optimizer.zero_grad()
                     tepoch.set_description(f"Epoch {epoch+1}/{n_epochs}")
+                    # Retrieve inputs to HARP
                     node_features, capacities, tms, tms_pred, opt = inputs
                     
                     # If the topology does not change across examples/snapshots (static topology), just take the first example
@@ -170,6 +169,7 @@ if props.mode.lower() == "train":
             train_dataset.pte = (train_dataset.pte).to(device="cpu")
             train_dataset.padded_edge_ids_per_path = train_dataset.padded_edge_ids_per_path.to(device="cpu")
             
+        # Iterate over validation clusters
         model.eval()
         for i in range(len(val_ds_list)):
             val_dataset = val_ds_list[i]
