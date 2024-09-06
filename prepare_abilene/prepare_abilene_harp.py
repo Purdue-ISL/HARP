@@ -80,7 +80,7 @@ tms_files = [i for i in os.listdir() if i[0] == "X"]
 tms_files = sorted(tms_files)
 list_tms = []
 tm_id = 1
-for filename in tms_files[:8]:
+for filename in tms_files:
     file = open(filename, "r")
     for line in file.readlines():
         matrix = line.split()
