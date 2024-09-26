@@ -53,8 +53,7 @@ class DM_Dataset_within_Cluster(Dataset):
         return len(self.list_tms)
     
     def __getitem__(self, idx):
-        if "geant" not in self.props.topo:
-            return self.list_node_features[idx], self.list_capacities[idx], self.list_tms[idx], self.list_tms[idx], self.list_optimal_values[idx]
-        else:
+        if self.props.pred:
             return self.list_node_features[idx], self.list_capacities[idx], self.list_tms[idx], self.list_tms_pred[idx], self.list_optimal_values[idx]
-        
+        else:
+            return self.list_node_features[idx], self.list_capacities[idx], self.list_tms[idx], self.list_tms[idx], self.list_optimal_values[idx]        
