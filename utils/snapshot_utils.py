@@ -84,7 +84,7 @@ class Read_Snapshot:
         if self.props.mode == "train":
             self.capacities[mask] += 1e-4
         elif self.props.mode == "test":
-            self.capacities[mask] += 0
+            self.capacities[mask] += 1e-4
         
         cap_sum_list = []
         for node in self.graph.nodes():
