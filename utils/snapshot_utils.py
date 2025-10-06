@@ -20,7 +20,7 @@ class Read_Snapshot:
         self.tm = self.read_tms(tm_filename)
         
         if self.props.pred:
-            self.tm_pred = self.read_tms_pred(tm_filename)
+            self.tm_pred = self.read_tms_pred(tm_filename, self.props.pred_type)
         else:
             self.tm_pred = np.array([0])
         
@@ -110,8 +110,8 @@ class Read_Snapshot:
         
         return tm
 
-    def read_tms_pred(self, tm_filename):
-        file = open(f"{self.parent_dir_path}/traffic_matrices/{self.topo}_pred/{tm_filename}", 'rb')
+    def read_tms_pred(self, tm_filename, pred_type):
+        file = open(f"{self.parent_dir_path}/traffic_matrices/{self.topo}_{pred_type}/{tm_filename}", 'rb')
         tm = pickle.load(file)
         tm = tm.reshape(-1, 1)
         tm = tm.astype(np.float32)

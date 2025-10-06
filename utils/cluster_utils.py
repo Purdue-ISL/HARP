@@ -7,6 +7,7 @@ import torch
 from itertools import islice
 from scipy.sparse import csr_matrix
 import pickle
+from collections import defaultdict
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(current_dir)
@@ -104,27 +105,41 @@ class Cluster_Info:
             4. Convert the padded edge indices to a tensor of int64 type and save it to the file.
             5. Return the padded edge IDs tensor.
         """
-
-
         filepath = f"{self.parent_dir_path}/topologies/padded_edge_ids_per_path/{self.props.topo}_{self.props.num_paths_per_pair}_paths_cluster_{self.cluster}_padded_edge_ids_per_path.pkl"
+        filepath_1 = f"{self.parent_dir_path}/topologies/padded_edge_ids_per_path/{self.props.topo}_{self.props.num_paths_per_pair}_paths_cluster_{self.cluster}_edge_ids_dict.pkl"
         try:
-            padded_edge_ids_per_path = torch.load(filepath)
+            padded_edge_ids_per_path = torch.load(filepath, weights_only=False)
+            file = open(f"{filepath_1}", "rb")
+            edge_ids_dict_tensor, original_pos_edge_ids_dict_tensor = pickle.load(file)
+            file.close()
+            # x = torch.where(padded_edge_ids_per_path == -1)
+            # print(x[0].shape)
         except:
             paths_edges_list = []
+            edge_ids_dict_tensor = defaultdict(list)
+            original_pos_edge_ids_dict_tensor = defaultdict(list)
+            k = 0
             for key in pij.keys():
                 for path in pij[key]:
-                    edges_list = []
-                    for edge in path:
-                        index = edges_map[edge]
-                        edges_list.append(index)
-                    paths_edges_list.append(torch.tensor(edges_list, dtype=torch.int32))
-                
+                    edges_list = [edges_map[edge] for edge in path]
+                    paths_edges_list.append(torch.tensor(edges_list, dtype=torch.int64))
+                    length = len(edges_list)
+                    edge_ids_dict_tensor[length].append(torch.tensor(edges_list, dtype=torch.int64))
+                    original_pos_edge_ids_dict_tensor[length].append(k)
+                    k += 1
             padded_edge_ids_per_path = pad_sequence(paths_edges_list, batch_first=True,
                     padding_value=-1.0)
             padded_edge_ids_per_path = padded_edge_ids_per_path.to(dtype=torch.int64)
             torch.save(padded_edge_ids_per_path, filepath)
-        
-        return padded_edge_ids_per_path
+            x = 0
+            for key in edge_ids_dict_tensor.keys():
+                edge_ids_dict_tensor[key] = torch.stack(edge_ids_dict_tensor[key])
+                original_pos_edge_ids_dict_tensor[key] = torch.tensor(original_pos_edge_ids_dict_tensor[key])
+                x += edge_ids_dict_tensor[key].shape[0]
+            file = open(f"{filepath_1}", "wb")
+            pickle.dump((edge_ids_dict_tensor, original_pos_edge_ids_dict_tensor), file)
+            file.close()
+        return padded_edge_ids_per_path, edge_ids_dict_tensor, original_pos_edge_ids_dict_tensor
         
     def get_paths_to_edges_matrix(self, pij: dict) -> torch.sparse_coo_tensor:
         """
@@ -142,7 +157,7 @@ class Cluster_Info:
     
         filepath = f"{self.parent_dir_path}/topologies/paths/{self.props.topo}_{self.props.num_paths_per_pair}_paths_cluster_{self.cluster}.pkl"
         try:
-            paths_to_edges = torch.load(filepath)
+            paths_to_edges = torch.load(filepath, weights_only=False)
         except FileNotFoundError:
             paths_arr = []
             path_to_commodity = dict()

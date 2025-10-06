@@ -45,7 +45,7 @@ class DM_Dataset_within_Cluster(Dataset):
         self.edge_index = cluster_info.sp.get_edge_index().to(props.device)
         self.pij = cluster_info.compute_ksp_paths(props.num_paths_per_pair, cluster_info.sp.pairs)
         self.pte = cluster_info.get_paths_to_edges_matrix(self.pij)
-        self.padded_edge_ids_per_path = cluster_info.get_padded_edge_ids_per_path(self.pij, cluster_info.edges_map)
+        self.padded_edge_ids_per_path, self.edge_ids_dict_tensor, self.original_pos_edge_ids_dict_tensor = cluster_info.get_padded_edge_ids_per_path(self.pij, cluster_info.edges_map)
         self.num_pairs = cluster_info.num_pairs
         
         

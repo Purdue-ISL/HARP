@@ -34,10 +34,13 @@ def add_default_args(parser):
     parser.add_argument("--test_cluster", type=int, help="HARP: Cluster ID to be used for testing.")
     parser.add_argument("--opt_start_idx", type=int, help="Gurobi: Start index for optimal computation.")
     parser.add_argument("--opt_end_idx", type=int, help="Gurobi: End index for optimal computation.")
+    parser.add_argument("--checkpoint", type=int, default=0, help="Flag to indicate if checkpoint is used. Default is 0 (False).")
+    parser.add_argument("--meta_learning", type=int, default=0, help="Flag to indicate if meta-learning is used. Default is 0 (False).")
     
     # Prediction arguments
     parser.add_argument("--pred", type=int, default=0, help="Flag to indicate if predicted TMs are used. Default is 0 (False).")
-
+    parser.add_argument("--pred_type", type=str, default="esm", help="Type of predicted TMs to be used. Default is 'esm'.")
+    
     return parser
     
 def parse_args(args):

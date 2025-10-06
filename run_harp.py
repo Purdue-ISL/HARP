@@ -5,17 +5,18 @@ cwd = os.getcwd()
 sys.path.append(cwd + "/utils")
 from utils.args_parser import parse_args
 from utils.build_dataset_within_cluster import DM_Dataset_within_Cluster
-
+from utils.training_utils import create_dataloaders, validate, loss_mlu, move_to_device, train
 
 import torch
 device = torch.device('cuda' if  torch.cuda.is_available() else 'cpu')
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from frameworks.harp_system import HARP
-
+import copy
 
 props = parse_args(sys.argv[1:])
 props.device = device
+props_geant = copy.deepcopy(props)
 
 if props.dtype.lower() == "float32":
     props.dtype = torch.float32
@@ -30,145 +31,43 @@ else:
 batch_size = props.batch_size
 n_epochs = props.epochs
 
-
-# Define the loss
-def loss_mlu(y_pred_batch, y_true_batch):
-    losses = []
-    loss_vals = []
-    batch_size = y_pred_batch.shape[0]
-    for i in range(batch_size):
-        y_pred = y_pred_batch[[i]]
-        opt = y_true_batch[[i]]
-        max_cong = torch.max(y_pred)
-        loss = 1.0 - max_cong if max_cong.item() == 0.0 else max_cong/max_cong.item()
-        loss_val = 1.0 if opt == 0.0 else max_cong.item() / opt.item()
-        losses.append(loss)
-        loss_vals.append(loss_val)
-    ret = sum(losses) / len(losses)
-    ret_val = sum(loss_vals) / len(loss_vals)
-    return ret, ret_val
     
 if props.mode.lower() == "train":
-    
-
-    # Function for validation set
-    def validate(model, props, val_ds, val_dl):
-        val_norm_mlu = []
-        with torch.no_grad():
-            with tqdm(val_dl) as vals:
-                for i, inputs in enumerate(vals):
-                    node_features, capacities, tms, tms_pred, opt = inputs
-                                        
-                    node_features = node_features.to(device=props.device, dtype=props.dtype)
-                    capacities = capacities.to(device=props.device, dtype=props.dtype)
-                    tms = tms.to(device=props.device, dtype=props.dtype)
-                    tms_pred = tms_pred.to(device=props.device, dtype=props.dtype)
-                    opt = opt.to(device=props.device, dtype=props.dtype)
-                    
-                    # If prediction is on, feed the predicted matrix
-                    if props.pred:
-                        tms_pred = tms_pred.to(device=device, dtype=props.dtype)
-                        
-                        predicted = model(props, node_features, val_ds.edge_index, capacities,
-                                val_ds.padded_edge_ids_per_path,
-                                tms, tms_pred, val_ds.pte)
-
-                    # If prediction is off, feed the actual matrix as predicted matrix
-                    else:
-                        predicted = model(props, node_features, val_ds.edge_index, capacities,
-                                val_ds.padded_edge_ids_per_path,
-                                tms, tms, val_ds.pte)
-                        
-                    val_loss, value_loss_value = loss_mlu(predicted, opt)
-                    val_norm_mlu.append(value_loss_value)
-        
-        return val_norm_mlu
-        
-    # create the training and validation DataLoaders
-    ds_list = []
-    dl_list = []
-    for clstr, start, end in zip(props.train_clusters, props.train_start_indices, props.train_end_indices):
-        train_dataset = DM_Dataset_within_Cluster(props, clstr, start, end)
-        train_dl = DataLoader(train_dataset, batch_size=batch_size, shuffle = False)
-        ds_list.append(train_dataset)
-        dl_list.append(train_dl)
-    
-    val_ds_list = []
-    val_dl_list = []
-    for clstr, start, end in zip(props.val_clusters, props.val_start_indices, props.val_end_indices):
-        val_dataset = DM_Dataset_within_Cluster(props, clstr, start, end)
-        val_dl = DataLoader(val_dataset, batch_size=1, shuffle = False)
-        val_ds_list.append(val_dataset)
-        val_dl_list.append(val_dl)
-    
     # Instaniate HARP
     model = HARP(props)
-    
-    # model.float()
     model = model.to(device=device, dtype=props.dtype)
-        
-    # optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=props.lr)
+
     
-    train_losses = []
-    val_losses = []
+    if props.meta_learning:
+        print("Meta-Training Hattrick")
+        rau = 7
+        props_geant.topo = "geant"
+        props_geant.num_paths_per_pair = 8
+        props_geant.train_clusters = [0]
+        props_geant.train_start_indices = [0]
+        props_geant.train_end_indices = [6464]
+        props_geant.epochs = 10
+        props_geant.batch_size = 32
+        props_geant.dynamic = 0
+        props_geant.num_for_loops = rau
+        props_geant.device = device
+        props_geant.dtype = props.dtype
+        geant_optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+        geant_ds_list, geant_dl_list = create_dataloaders(props_geant, props_geant.batch_size, training = True, shuffle = True)
+        for i in range(props_geant.epochs):
+            train(model, props_geant, geant_ds_list, geant_dl_list, geant_optimizer, i, props_geant.epochs)
+        print("Meta-Training Done")
+
+
+    ds_list, dl_list = create_dataloaders(props, batch_size, training = True, shuffle = True)
+    val_ds_list, val_dl_list = create_dataloaders(props, 1, training = False, shuffle = False)
+    
     
     # Train harp for #n_epochs
     for epoch in range(n_epochs):
-
-        # Iterate over training clusters
-        for i in range(len(ds_list)):
-            train_dataset = ds_list[i]
-            train_dl = dl_list[i]
-            train_dataset.pte = (train_dataset.pte).to(device=device, dtype=props.dtype)
-            train_dataset.padded_edge_ids_per_path = train_dataset.padded_edge_ids_per_path.to(device)
-            model.train()
-            
-            with tqdm(train_dl) as tepoch:
-                epoch_train_loss = []
-                loss_sum = loss_count = 0
-                for i, inputs in enumerate(tepoch):
-                    optimizer.zero_grad()
-                    tepoch.set_description(f"Epoch {epoch+1}/{n_epochs}")
-                    # Retrieve inputs to HARP
-                    node_features, capacities, tms, tms_pred, opt = inputs
-                    
-                    # If the topology does not change across examples/snapshots (static topology), just take the first example
-                    if not props.dynamic:
-                        node_features = node_features[:1]
-                        capacities = capacities[:1]
-                        
-                    node_features = node_features.to(device=device, dtype=props.dtype)
-                    capacities = capacities.to(device=device, dtype=props.dtype)
-                    tms = tms.to(device=device, dtype=props.dtype)
-                    opt = opt.to(device=device, dtype=props.dtype)
-                    
-                    # If prediction is on, feed the predicted matrix
-                    if props.pred:
-                        tms_pred = tms_pred.to(device=device, dtype=props.dtype)
-                        
-                        predicted = model(props, node_features, train_dataset.edge_index, capacities,
-                                train_dataset.padded_edge_ids_per_path,
-                                tms, tms_pred, train_dataset.pte)
-
-                    # If prediction is off, feed the actual matrix as predicted matrix
-                    else:
-                        predicted = model(props, node_features, train_dataset.edge_index, capacities,
-                                train_dataset.padded_edge_ids_per_path,
-                                tms, tms, train_dataset.pte)
-                    
-                    loss, loss_val = loss_mlu(predicted, opt)
-                    loss.backward()
-                    optimizer.step()
-                    epoch_train_loss.append(loss_val)
-                    loss_sum += loss_val
-                    loss_count += 1
-                    loss_avg = loss_sum / loss_count
-                    tepoch.set_postfix(loss=loss_avg)
-                    
-            train_dataset.pte = (train_dataset.pte).to(device="cpu")
-            train_dataset.padded_edge_ids_per_path = train_dataset.padded_edge_ids_per_path.to(device="cpu")
-            
+        model.train()
+        train(model, props, ds_list, dl_list, optimizer, epoch, n_epochs)
         # Iterate over validation clusters
         model.eval()
         for i in range(len(val_ds_list)):
@@ -176,14 +75,16 @@ if props.mode.lower() == "train":
             val_dl = val_dl_list[i]
             val_dataset.pte = (val_dataset.pte).to(device=props.device, dtype=props.dtype)
             val_dataset.padded_edge_ids_per_path = val_dataset.padded_edge_ids_per_path.to(device=props.device)
-            
+            move_to_device(val_dataset.edge_ids_dict_tensor, props.device)
+            move_to_device(val_dataset.original_pos_edge_ids_dict_tensor, props.device)
             val_norm_mlu = validate(model, props, val_dataset, val_dl)
             val_avg_loss = sum(val_norm_mlu)/len(val_norm_mlu)
             print(f"Validation Avg loss: {round(val_avg_loss, 5)}")
             
             val_dataset.pte = (val_dataset.pte).to(device="cpu")
             val_dataset.padded_edge_ids_per_path = val_dataset.padded_edge_ids_per_path.to(device="cpu")
-
+            move_to_device(val_dataset.edge_ids_dict_tensor, "cpu")
+            move_to_device(val_dataset.original_pos_edge_ids_dict_tensor, "cpu")
         torch.save(model, f'HARP_{props.topo}_pred_{props.pred}_{props.num_paths_per_pair}sp.pkl')
         
 elif props.mode.lower() == "test": #test
@@ -194,7 +95,8 @@ elif props.mode.lower() == "test": #test
     test_dl = DataLoader(test_dataset, batch_size=1, shuffle=False)
     test_dataset.pte = (test_dataset.pte).to(props.device, dtype=props.dtype)
     test_dataset.padded_edge_ids_per_path = test_dataset.padded_edge_ids_per_path.to(device)
-    
+    move_to_device(test_dataset.edge_ids_dict_tensor, props.device)
+    move_to_device(test_dataset.original_pos_edge_ids_dict_tensor, props.device)
     #load the model
     model = torch.load(f'HARP_{props.topo}_pred_{props.pred}_{props.num_paths_per_pair}sp.pkl', map_location=device)
     model = model.to(dtype=props.dtype)
@@ -217,13 +119,13 @@ elif props.mode.lower() == "test": #test
                     
                     predicted = model(props, node_features, test_dataset.edge_index, capacities,
                             test_dataset.padded_edge_ids_per_path,
-                            tms, tms_pred, test_dataset.pte)
+                            tms, tms_pred, test_dataset.pte, test_dataset.edge_ids_dict_tensor, test_dataset.original_pos_edge_ids_dict_tensor)
 
                 # If prediction is off, feed the actual matrix as predicted matrix
                 else:
                     predicted = model(props, node_features, test_dataset.edge_index, capacities,
                             test_dataset.padded_edge_ids_per_path,
-                            tms, tms, test_dataset.pte)
+                            tms, tms, test_dataset.pte, test_dataset.edge_ids_dict_tensor, test_dataset.original_pos_edge_ids_dict_tensor)
                 
                 test_loss, test_loss_value = loss_mlu(predicted, opt)
                 test_losses.append(test_loss_value)
