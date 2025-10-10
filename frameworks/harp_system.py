@@ -287,9 +287,9 @@ class HARP(nn.Module):
             new_gammas = gammas
         
         if props.checkpoint:
-            edges_util = checkpoint(self.compute_edge_utils, gammas, paths_to_edges, tm, capacities, props, batch_size, num_paths_per_pair, add_epsilon=False, use_reentrant=False)
+            edges_util = checkpoint(self.compute_edge_utils, new_gammas, paths_to_edges, tm, capacities, props, batch_size, num_paths_per_pair, add_epsilon=False, use_reentrant=False)
         else:
-            edges_util = self.compute_edge_utils(gammas, paths_to_edges, tm, capacities, props, batch_size, num_paths_per_pair, add_epsilon=False)
+            edges_util = self.compute_edge_utils(new_gammas, paths_to_edges, tm, capacities, props, batch_size, num_paths_per_pair, add_epsilon=False)
         
         return edges_util
     
