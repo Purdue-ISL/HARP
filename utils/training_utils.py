@@ -43,10 +43,10 @@ def create_dataloaders(props, batch_size_dl, training = True, shuffle = True):
     
     return ds_list, dl_list
 
-def train(model, props, train_ds, train_dl, optimizer, epoch, n_epochs):
-    for i in range(len(train_ds)):
-        train_dataset = train_ds[i]
-        train_dl = train_dl[i]
+def train(model, props, train_ds_list, train_dl_list, optimizer, epoch, n_epochs):
+    for i in range(len(train_ds_list)):
+        train_dataset = train_ds_list[i]
+        train_dl = train_dl_list[i]
         train_dataset.pte = (train_dataset.pte).to(device=props.device, dtype=props.dtype)
         train_dataset.padded_edge_ids_per_path = train_dataset.padded_edge_ids_per_path.to(device=props.device)
         move_to_device(train_dataset.edge_ids_dict_tensor, props.device)
